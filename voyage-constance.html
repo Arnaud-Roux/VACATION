@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Une Surprise Pour Toi, Constance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --sand: #E8DCC8;
+  --sand-light: #F5F0E8;
+  --beige: #D4C5A9;
+  --terracotta: #C17B5D;
+  --noir: #1A1A1A;
+  --noir-deep: #0D0D0D;
+  --blanc: #FDFBF7;
+  --blanc-casse: #F8F4ED;
+  --gold: #C9A96E;
+  --gold-light: #D4BA85;
+  --warm-gray: #8A7E6E;
+}
+
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--blanc);
+  color: var(--noir);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* LOADER */
+#loader {
+  position: fixed; inset: 0; z-index: 10000;
+  background: var(--noir-deep);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#loader.hidden { opacity: 0; pointer-events: none; }
+.loader-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  color: var(--gold); letter-spacing: 0.3em; text-transform: uppercase; opacity: 0;
+}
+.loader-line { width: 0; height: 1px; background: var(--gold); margin-top: 2rem; }
+.loader-sub {
+  font-family: 'Cormorant Garamond', serif; font-size: 0.75rem;
+  color: var(--warm-gray); letter-spacing: 0.5em; text-transform: uppercase;
+  margin-top: 1.5rem; opacity: 0;
+}
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  padding: 1.5rem 3rem;
+  display: flex; justify-content: space-between; align-items: center;
+  transition: all 0.5s;
+}
+nav.scrolled {
+  background: rgba(253,251,247,0.92); backdrop-filter: blur(20px);
+  padding: 1rem 3rem; box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+}
+nav.scrolled .nav-logo { color: var(--noir) !important; }
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif; font-size: 1.1rem;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--blanc); text-decoration: none; transition: color 0.3s;
+}
+
+/* HERO */
+#hero {
+  position: relative; height: 100vh; min-height: 600px;
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background: url('https://images.unsplash.com/photo-1539020140153-e479b8c22e70?w=1920&q=85') center/cover;
+  transform: scale(1.1);
+}
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(13,13,13,0.3), rgba(13,13,13,0.6) 70%, rgba(13,13,13,0.75));
+}
+.hero-content { position: relative; z-index: 2; text-align: center; max-width: 750px; padding: 0 2rem; }
+.hero-eyebrow {
+  font-size: 0.7rem; font-weight: 500; letter-spacing: 0.4em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 1.5rem; opacity: 0;
+}
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.8rem, 7vw, 5.5rem); font-weight: 400;
+  color: var(--blanc); line-height: 1.1; margin-bottom: 1.5rem; opacity: 0;
+}
+.hero-title em { font-style: italic; color: var(--gold-light); }
+.hero-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem); font-weight: 300;
+  color: rgba(255,255,255,0.7); margin-bottom: 2.5rem; opacity: 0;
+}
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 0.75rem;
+  font-size: 0.75rem; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--blanc); background: transparent;
+  border: 1px solid rgba(255,255,255,0.3); padding: 1rem 2.5rem;
+  cursor: pointer; transition: all 0.4s; opacity: 0;
+}
+.hero-cta:hover { background: var(--blanc); color: var(--noir); border-color: var(--blanc); }
+.hero-cta svg { width: 16px; height: 16px; transition: transform 0.3s; }
+.hero-cta:hover svg { transform: translateY(3px); }
+.scroll-hint {
+  position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+  z-index: 2; opacity: 0;
+}
+.scroll-hint span {
+  display: block; width: 1px; height: 35px; margin: 0 auto;
+  background: linear-gradient(180deg, var(--gold), transparent);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 0.3; transform: scaleY(0.6); }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+
+/* SECTIONS */
+section { position: relative; }
+.section-pad { padding: 7rem 2rem; }
+.container { max-width: 1100px; margin: 0 auto; }
+.eyebrow {
+  font-size: 0.65rem; font-weight: 500; letter-spacing: 0.4em;
+  text-transform: uppercase; color: var(--terracotta); margin-bottom: 1rem;
+}
+.stitle {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 400;
+  line-height: 1.15; color: var(--noir); margin-bottom: 1.2rem;
+}
+.stitle em { font-style: italic; color: var(--terracotta); }
+.stext {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.05rem, 2vw, 1.25rem); font-weight: 300;
+  line-height: 1.7; color: var(--warm-gray);
+}
+.divider { width: 50px; height: 1px; background: var(--gold); margin: 1.5rem 0; }
+.reveal { opacity: 0; transform: translateY(30px); }
+.reveal-scale { opacity: 0; transform: scale(0.95); }
+
+/* DESTINATION REVEAL */
+#destination {
+  height: 80vh; min-height: 500px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--noir-deep); overflow: hidden;
+}
+.dest-bg {
+  position: absolute; inset: 0;
+  background: url('https://images.unsplash.com/photo-1597212618440-806262de4f6b?w=1920&q=85') center/cover;
+  opacity: 0.2; transform: scale(1.1);
+}
+.dest-content { position: relative; z-index: 2; text-align: center; }
+.dest-small {
+  font-size: 0.7rem; letter-spacing: 0.5em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 1.5rem; opacity: 0;
+}
+.dest-name {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(4rem, 12vw, 9rem); font-weight: 400;
+  color: var(--blanc); line-height: 0.9; opacity: 0;
+}
+.dest-name em {
+  font-style: italic; display: block; font-size: 0.35em;
+  color: var(--gold-light); letter-spacing: 0.1em; margin-top: 0.5rem;
+}
+.dest-dates {
+  font-family: 'Cormorant Garamond', serif; font-size: 1.15rem;
+  color: rgba(255,255,255,0.45); margin-top: 1.5rem; opacity: 0;
+}
+
+/* COUNTDOWN */
+.countdown { background: var(--sand-light); text-align: center; }
+.cd-grid { display: flex; justify-content: center; gap: 3rem; margin-top: 2rem; }
+.cd-val {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.5rem, 5vw, 3.5rem); font-weight: 400;
+  color: var(--terracotta); line-height: 1;
+}
+.cd-label {
+  font-size: 0.6rem; font-weight: 500; letter-spacing: 0.3em;
+  text-transform: uppercase; color: var(--warm-gray); margin-top: 0.4rem;
+}
+
+/* TIMELINE */
+#timeline { background: var(--blanc-casse); }
+.tl-wrap { position: relative; padding-left: 2.5rem; }
+.tl-line { position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: var(--beige); }
+.tl-progress { position: absolute; left: 0; top: 0; width: 1px; height: 0; background: var(--terracotta); }
+.tl-day { position: relative; padding: 0 0 4rem 2.5rem; cursor: pointer; }
+.tl-day:last-child { padding-bottom: 0; }
+.tl-dot {
+  position: absolute; left: -2.95rem; top: 0.2rem;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--beige); border: 2px solid var(--blanc-casse);
+  transition: all 0.4s; z-index: 2;
+}
+.tl-day.active .tl-dot, .tl-day:hover .tl-dot {
+  background: var(--terracotta); transform: scale(1.4);
+  box-shadow: 0 0 0 4px rgba(193,123,93,0.15);
+}
+.tl-label {
+  font-size: 0.6rem; font-weight: 600; letter-spacing: 0.3em;
+  text-transform: uppercase; color: var(--terracotta); margin-bottom: 0.3rem;
+}
+.tl-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.3rem, 3vw, 1.8rem); font-weight: 400;
+  color: var(--noir); margin-bottom: 0.4rem;
+}
+.tl-loc {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem; color: var(--warm-gray); font-style: italic; margin-bottom: 0.8rem;
+}
+.tl-desc {
+  font-size: 0.85rem; color: var(--warm-gray); line-height: 1.65;
+  max-width: 500px;
+}
+.tl-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.8rem; }
+.tag {
+  font-size: 0.55rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--terracotta); border: 1px solid rgba(193,123,93,0.25);
+  padding: 0.3rem 0.6rem; border-radius: 2px;
+}
+a.tag { text-decoration: none; cursor: pointer; transition: all 0.3s; }
+a.tag:hover { background: var(--terracotta); color: var(--blanc); border-color: var(--terracotta); }
+
+/* IMAGE BREAK */
+.img-break {
+  height: 55vh; min-height: 300px; position: relative; overflow: hidden;
+}
+.img-break img { width: 100%; height: 100%; object-fit: cover; }
+.img-break-overlay {
+  position: absolute; inset: 0; background: rgba(13,13,13,0.55);
+  display: flex; align-items: center; justify-content: center;
+}
+.img-break-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.3rem, 3.5vw, 2.5rem); font-weight: 300; font-style: italic;
+  color: var(--blanc); text-align: center; max-width: 600px; padding: 0 2rem;
+}
+
+/* ACCOMMODATIONS */
+#stays { background: var(--noir-deep); color: var(--blanc); }
+#stays .eyebrow { color: var(--gold); }
+#stays .stitle { color: var(--blanc); }
+.stays-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; margin-top: 3rem; }
+.stay-card { position: relative; overflow: hidden; }
+.stay-img { width: 100%; aspect-ratio: 4/3; object-fit: cover; transition: transform 0.6s; }
+.stay-card:hover .stay-img { transform: scale(1.03); }
+.stay-info { padding: 1.5rem 0 0; }
+.stay-stars { font-size: 0.65rem; color: var(--gold); letter-spacing: 0.2em; margin-bottom: 0.5rem; }
+.stay-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; font-weight: 400; color: var(--blanc); margin-bottom: 0.3rem;
+}
+.stay-loc {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.95rem; font-style: italic; color: var(--gold-light); margin-bottom: 0.8rem;
+}
+.stay-desc { font-size: 0.8rem; color: rgba(255,255,255,0.55); line-height: 1.6; }
+
+/* CONCLUSION */
+#conclusion {
+  min-height: 90vh; display: flex; align-items: center; justify-content: center;
+  background: var(--noir-deep); overflow: hidden;
+}
+.concl-bg {
+  position: absolute; inset: 0;
+  background: url('https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=1920&q=85') center/cover;
+  opacity: 0.15;
+}
+.concl-content { position: relative; z-index: 2; text-align: center; max-width: 650px; padding: 4rem 2rem; }
+.concl-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 400;
+  color: var(--blanc); line-height: 1.15; margin-bottom: 1.5rem;
+}
+.concl-title em { font-style: italic; color: var(--gold-light); }
+.concl-msg {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.05rem, 2vw, 1.3rem); font-weight: 300;
+  color: rgba(255,255,255,0.65); line-height: 1.8; margin-bottom: 2rem;
+}
+.concl-sig {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2rem; font-style: italic; color: var(--gold);
+}
+.surprise-btn {
+  display: inline-flex; align-items: center; gap: 0.75rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--noir-deep); background: var(--gold);
+  padding: 1.1rem 3rem; text-decoration: none;
+  transition: all 0.4s; margin-top: 0.5rem;
+}
+.surprise-btn:hover {
+  background: var(--gold-light); transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(201,169,110,0.3);
+}
+.surprise-btn svg { transition: transform 0.3s; }
+.surprise-btn:hover svg { transform: translateX(4px); }
+
+footer {
+  background: var(--noir-deep); padding: 2rem;
+  text-align: center; font-family: 'Cormorant Garamond', serif;
+  font-size: 0.85rem; color: rgba(255,255,255,0.2);
+}
+
+/* RESPONSIVE */
+@media (max-width: 800px) {
+  nav { padding: 1rem 1.5rem; }
+  .section-pad { padding: 4.5rem 1.5rem; }
+  .stays-grid { grid-template-columns: 1fr; }
+  .tl-wrap { padding-left: 2rem; }
+  .tl-day { padding-left: 2rem; }
+  .tl-dot { left: -2.45rem; }
+  .cd-grid { gap: 1.5rem; }
+}
+@media (max-width: 500px) {
+  .hero-title { font-size: 2.2rem; }
+  .cd-grid { gap: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-text" id="lt">Constance</div>
+  <div class="loader-line" id="ll"></div>
+  <div class="loader-sub" id="ls">joyeux anniversaire</div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#hero" class="nav-logo">C & A</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg" id="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow" id="he">Joyeux anniversaire, Constance</div>
+    <h1 class="hero-title" id="ht">Une surprise <em>t'attend</em></h1>
+    <p class="hero-sub" id="hs">Ferme les yeux. Respire. Et laisse-toi porter.</p>
+    <button class="hero-cta" id="hc" onclick="gsap.to(window,{scrollTo:'#destination',duration:1.2,ease:'power3.inOut'})">
+      Decouvrir
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </button>
+  </div>
+  <div class="scroll-hint" id="sh"><span></span></div>
+</section>
+
+<!-- DESTINATION -->
+<section id="destination">
+  <div class="dest-bg" id="dbg"></div>
+  <div class="dest-content">
+    <div class="dest-small" id="ds">Destination</div>
+    <h2 class="dest-name" id="dn">Marrakech<em>18 &mdash; 23 juin 2026</em></h2>
+    <p class="dest-dates" id="dd">6 jours &middot; 5 nuits &middot; Rien que nous deux</p>
+  </div>
+</section>
+
+<!-- COUNTDOWN -->
+<section class="countdown section-pad" style="padding:5rem 2rem;">
+  <div class="container" style="text-align:center;">
+    <div class="eyebrow reveal">Depart dans</div>
+    <div class="cd-grid reveal">
+      <div><span class="cd-val" id="cd-d">--</span><div class="cd-label">Jours</div></div>
+      <div><span class="cd-val" id="cd-h">--</span><div class="cd-label">Heures</div></div>
+      <div><span class="cd-val" id="cd-m">--</span><div class="cd-label">Min</div></div>
+      <div><span class="cd-val" id="cd-s">--</span><div class="cd-label">Sec</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section id="timeline" class="section-pad">
+  <div class="container">
+    <div class="eyebrow reveal">Le programme</div>
+    <h2 class="stitle reveal">Jour par <em>jour</em></h2>
+
+    <div class="tl-wrap" style="margin-top:3rem;">
+      <div class="tl-line"></div>
+      <div class="tl-progress" id="tl-prog"></div>
+
+      <div class="tl-day reveal" onclick="toggle(this)">
+        <div class="tl-dot"></div>
+        <div class="tl-label">Jeudi 18</div>
+        <h3 class="tl-title">Arrivee & premiere soiree</h3>
+        <div class="tl-loc">Medina de Marrakech</div>
+        <p class="tl-desc">Check-in au riad, balade medina, Jemaa el-Fna au coucher du soleil, diner rooftop.</p>
+        <div class="tl-tags">
+          <a class="tag" href="https://www.booking.com/hotel/ma/sabor-safra.en-gb.html" target="_blank">Riad Sabor Safra</a><a class="tag" href="https://www.google.com/search?client=safari&hs=57d&sca_esv=a47818735ee0b999&cs=0&sxsrf=ANbL-n6vUyPwRTJTpAf7D7_JbQHUEvUw2A:1780070890571&q=Place+Jemaa+el+fna+Avis&rflfq=1&num=20&stick=H4sIAAAAAAAAAONgkxK2MDIzNjc1NTcys7AwtTA3NjQz3cDI-IpRPCAnMTlVwSs1NzFRITVHIS0vUcGxLLN4ESsuGQCvGFSyTgAAAA&rldimm=8263755726885873165&tbm=lcl&hl=fr-FR&sa=X&ved=2ahUKEwjLkezo8N6UAxUeTqQEHbxDMGUQ9fQKegQIEBAG&biw=1440&bih=797&dpr=2#lkt=LocalPoiReviews" target="_blank">Jemaa el-Fna</a><a class="tag" href="https://www.google.com/maps/search/Kabana+rooftop+Marrakech" target="_blank">Kabana</a><a class="tag" href="https://www.google.com/maps/search/Nomad+restaurant+Marrakech" target="_blank">Nomad</a>
+        </div>
+      </div>
+
+      <div class="tl-day reveal" onclick="toggle(this)">
+        <div class="tl-dot"></div>
+        <div class="tl-label">Vendredi 19</div>
+        <h3 class="tl-title">Culture & palais</h3>
+        <div class="tl-loc">Bahia, Ben Youssef, Koutoubia</div>
+        <p class="tl-desc">Visite guidee des incontournables avec guide local. Dejeuner au Nomad, soiree au DarDar ou Comptoir Darna.</p>
+        <div class="tl-tags">
+          <a class="tag" href="https://www.getyourguide.com/marrakesh-l208/marrakech-bahia-palace-saadian-tombs-koutoubia-mosque-t348061/" target="_blank">Bahia & Koutoubia</a><a class="tag" href="https://www.getyourguide.com/marrakesh-l208/marrakech-ben-youssef-secret-garden-souks-guided-tour-t551729/" target="_blank">Ben Youssef & Souks</a><a class="tag" href="https://www.google.com/maps/search/Comptoir+Darna+Marrakech" target="_blank">Comptoir Darna</a>
+        </div>
+      </div>
+
+      <div class="tl-day reveal" onclick="toggle(this)">
+        <div class="tl-dot"></div>
+        <div class="tl-label">Samedi 20</div>
+        <h3 class="tl-title">Excursion desert d'Agafay</h3>
+        <div class="tl-loc">Desert d'Agafay, retour au riad le soir</div>
+        <p class="tl-desc">Journee dans le desert d'Agafay. Quad, balade a dos de chameau au coucher du soleil, diner berbere avec spectacle. Retour au riad pour la nuit.</p>
+        <div class="tl-tags">
+          <a class="tag" href="https://www.getyourguide.com/marrakesh-l208/agafay-sunset-adventure-quad-camel-dinner-show-t1266882/" target="_blank">Sunset & Chameau</a><a class="tag" href="https://www.getyourguide.com/marrakesh-l208/quad-bike-camel-ride-with-sunset-views-dinner-show-t532308/" target="_blank">Quad & Diner spectacle</a>
+        </div>
+      </div>
+
+      <div class="tl-day reveal" onclick="toggle(this)">
+        <div class="tl-dot"></div>
+        <div class="tl-label">Dimanche 21</div>
+        <h3 class="tl-title">Detente & Majorelle</h3>
+        <div class="tl-loc">Marrakech, riad, jardins</div>
+        <p class="tl-desc">Journee tranquille. Piscine au riad le matin, Jardin Majorelle et Musee YSL l'apres-midi. Rooftop El Fenn le soir.</p>
+        <div class="tl-tags">
+          <span class="tag">Detente</span><a class="tag" href="https://www.google.com/maps/search/Jardin+Majorelle+Marrakech" target="_blank">Majorelle</a><a class="tag" href="https://www.getyourguide.com/marrakesh-l208/marrakech-yves-saint-laurent-museum-entry-ticket-t792811/" target="_blank">Musee YSL</a><a class="tag" href="https://www.google.com/maps/search/El+Fenn+Marrakech" target="_blank">El Fenn</a>
+        </div>
+      </div>
+
+      <div class="tl-day reveal" onclick="toggle(this)">
+        <div class="tl-dot"></div>
+        <div class="tl-label">Lundi 22</div>
+        <h3 class="tl-title">Montgolfiere & anniversaire</h3>
+        <div class="tl-loc">Ciel de Marrakech, hammam, diner d'exception</div>
+        <p class="tl-desc">Vol en montgolfiere a l'aube. Hammam + massage l'apres-midi. Diner d'anniversaire au Dar Yacout ou La Mamounia.</p>
+        <div class="tl-tags">
+          <a class="tag" href="https://www.getyourguide.com/marrakesh-l208/marrakech-balloon-flight-berber-breakfast-certificate-t743273/" target="_blank">Montgolfiere</a><a class="tag" href="https://www.getyourguide.com/marrakesh-l208/marrakech-head-spa-traditional-hammam-with-hotel-transport-t1287135/" target="_blank">Hammam</a><a class="tag" href="https://www.google.com/maps/search/Dar+Yacout+Marrakech" target="_blank">Dar Yacout</a><a class="tag" href="https://www.google.com/maps/search/La+Mamounia+Marrakech" target="_blank">La Mamounia</a>
+        </div>
+      </div>
+
+      <div class="tl-day reveal" onclick="toggle(this)">
+        <div class="tl-dot"></div>
+        <div class="tl-label">Mardi 23</div>
+        <h3 class="tl-title">Dernieres heures</h3>
+        <div class="tl-loc">Marrakech</div>
+        <p class="tl-desc">Petit-dej au riad, derniers achats, cafe rooftop, photos. Transfert aeroport.</p>
+        <div class="tl-tags">
+          <a class="tag" href="https://www.google.com/maps/search/Souks+Marrakech" target="_blank">Souks</a><a class="tag" href="https://www.google.com/maps/search/Marrakech+Menara+Airport" target="_blank">Aeroport</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IMAGE BREAK -->
+<div class="img-break">
+  <img src="https://images.unsplash.com/photo-1509023464722-18d996393ca8?w=1920&q=80" alt="Desert" loading="lazy">
+  <div class="img-break-overlay">
+    <p class="img-break-text reveal-scale">"Les plus beaux voyages sont avec ceux qu'on aime."</p>
+  </div>
+</div>
+
+<!-- ACCOMMODATIONS -->
+<section id="stays" class="section-pad">
+  <div class="container">
+    <div class="eyebrow reveal">Notre nid</div>
+    <h2 class="stitle reveal" style="color:var(--blanc);">Notre <em style="color:var(--gold-light);">riad</em></h2>
+
+    <div class="stays-grid" style="grid-template-columns:1fr;max-width:500px;margin-left:auto;margin-right:auto;">
+      <div class="stay-card reveal">
+        <a href="https://www.booking.com/hotel/ma/sabor-safra.en-gb.html" target="_blank"><img class="stay-img" src="riad-pool.jpg" alt="Riad Sabor Safra - Piscine" loading="lazy"></a>
+        <div class="stay-info">
+          <div class="stay-stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+          <a href="https://www.booking.com/hotel/ma/sabor-safra.en-gb.html" target="_blank" style="text-decoration:none;"><h3 class="stay-name" style="transition:color 0.3s;cursor:pointer;">Riad Sabor Safra</h3></a>
+          <div class="stay-loc">Medina de Marrakech &middot; 5 nuits</div>
+          <p class="stay-desc">Piscine, terrasse, petit-dejeuner marocain. Notre base pour tout le voyage, au coeur de la medina.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONCLUSION -->
+<section id="conclusion">
+  <div class="concl-bg"></div>
+  <div class="concl-content">
+    <h1 class="concl-title reveal">Et ce n'est pas <em>tout...</em></h1>
+    <p class="concl-msg reveal">
+      Le voyage, c'etait deja beaucoup. Mais il reste encore quelque chose.
+    </p>
+    <a href="surprise.html" class="surprise-btn reveal">
+      Surprise
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</section>
+
+<footer>Concu avec amour &middot; Juin 2026</footer>
+
+<script>
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+function initLoader() {
+  const tl = gsap.timeline({ onComplete: () => {
+    document.getElementById('loader').classList.add('hidden');
+    setTimeout(() => document.getElementById('loader').style.display='none', 800);
+    heroAnim();
+  }});
+  tl.to('#lt',{opacity:1,duration:0.7})
+    .to('#ll',{width:100,duration:1,ease:'power2.inOut'},'-=0.2')
+    .to('#ls',{opacity:1,duration:0.5},'-=0.4')
+    .to('#lt',{opacity:0,y:-15,duration:0.35},'+=0.6')
+    .to('#ll',{width:0,duration:0.3},'-=0.15')
+    .to('#ls',{opacity:0,y:8,duration:0.25},'-=0.2');
+}
+
+function heroAnim() {
+  const tl = gsap.timeline();
+  tl.to('#he',{opacity:1,y:0,duration:0.7})
+    .to('#ht',{opacity:1,y:0,duration:0.9},'-=0.3')
+    .to('#hs',{opacity:1,y:0,duration:0.7},'-=0.4')
+    .to('#hc',{opacity:1,y:0,duration:0.5},'-=0.2')
+    .to('#sh',{opacity:0.5,duration:0.5},'-=0.1');
+  gsap.to('#hero-bg',{y:'20%',ease:'none',
+    scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:0.5}});
+}
+
+function initReveals() {
+  gsap.utils.toArray('.reveal').forEach(el=>{
+    gsap.to(el,{opacity:1,y:0,duration:0.8,ease:'power2.out',
+      scrollTrigger:{trigger:el,start:'top 85%',once:true}});
+  });
+  gsap.utils.toArray('.reveal-scale').forEach(el=>{
+    gsap.to(el,{opacity:1,scale:1,duration:0.9,ease:'power2.out',
+      scrollTrigger:{trigger:el,start:'top 80%',once:true}});
+  });
+}
+
+function initDest() {
+  const tl = gsap.timeline({scrollTrigger:{trigger:'#destination',start:'top 60%',once:true}});
+  tl.to('#dbg',{opacity:0.3,scale:1,duration:1.2})
+    .to('#ds',{opacity:1,duration:0.5},'-=0.6')
+    .to('#dn',{opacity:1,duration:0.8},'-=0.2')
+    .to('#dd',{opacity:1,duration:0.5},'-=0.2');
+}
+
+function initNav() {
+  ScrollTrigger.create({start:'top -80',end:99999,
+    toggleClass:{className:'scrolled',targets:'#nav'}});
+}
+
+function toggle(el) {
+  const was = el.classList.contains('active');
+  document.querySelectorAll('.tl-day').forEach(d=>d.classList.remove('active'));
+  if(!was) el.classList.add('active');
+}
+
+function initTimeline() {
+  gsap.to('#tl-prog',{height:'100%',ease:'none',
+    scrollTrigger:{trigger:'#timeline .tl-wrap',start:'top 60%',end:'bottom 40%',scrub:0.3}});
+}
+
+function initParallax() {
+  gsap.utils.toArray('.img-break img').forEach(img=>{
+    gsap.to(img,{y:'-12%',ease:'none',
+      scrollTrigger:{trigger:img.parentElement,start:'top bottom',end:'bottom top',scrub:0.5}});
+  });
+  gsap.to('#dbg',{y:'8%',ease:'none',
+    scrollTrigger:{trigger:'#destination',start:'top bottom',end:'bottom top',scrub:0.5}});
+}
+
+function initCountdown() {
+  const dep = new Date('2026-06-18T08:00:00');
+  function u() {
+    const d = dep - new Date();
+    if(d<=0){['cd-d','cd-h','cd-m','cd-s'].forEach(id=>document.getElementById(id).textContent='0');return;}
+    document.getElementById('cd-d').textContent = Math.floor(d/864e5);
+    document.getElementById('cd-h').textContent = String(Math.floor(d%864e5/36e5)).padStart(2,'0');
+    document.getElementById('cd-m').textContent = String(Math.floor(d%36e5/6e4)).padStart(2,'0');
+    document.getElementById('cd-s').textContent = String(Math.floor(d%6e4/1e3)).padStart(2,'0');
+  }
+  u(); setInterval(u,1000);
+}
+
+window.addEventListener('load',()=>{
+  initLoader();
+  setTimeout(()=>{initReveals();initDest();initNav();initTimeline();initParallax();initCountdown();},100);
+});
+</script>
+
+</body>
+</html>

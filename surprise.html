@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ta Surprise, Constance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold:#c9a96e;--gold-light:#d4ba85;--blanc:#fdfbf7;
+  --noir:#0d0d0d;--terracotta:#c17b5d;--warm-gray:#8a7e6e;
+}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:#1a2a40;color:var(--blanc);overflow:hidden}
+body.scrollable{overflow-x:hidden;overflow-y:auto}
+
+/* MAP INTRO */
+#map-intro{position:fixed;inset:0;z-index:100}
+#map{width:100%;height:100%}
+.leaflet-control-zoom,.leaflet-control-attribution{display:none!important}
+
+/* Paris pin */
+.paris-marker{
+  display:flex;flex-direction:column;align-items:center;cursor:pointer;
+  transition:transform 0.3s;position:relative;
+}
+.paris-marker:hover{transform:scale(1.12)}
+.paris-label{
+  font-family:'Playfair Display',serif;font-size:16px;font-weight:500;
+  color:#fff;letter-spacing:0.06em;margin-bottom:5px;
+  text-shadow:0 2px 10px rgba(0,0,0,0.7);white-space:nowrap;
+}
+.paris-heart{
+  width:30px;height:30px;
+  filter:drop-shadow(0 0 12px rgba(201,169,110,0.6));
+}
+.paris-hint{
+  font-family:'Inter',sans-serif;font-size:9px;
+  color:rgba(255,255,255,0.5);letter-spacing:0.15em;text-transform:uppercase;
+  margin-top:5px;white-space:nowrap;
+  animation:hpulse 2.5s ease-in-out infinite;
+}
+@keyframes hpulse{0%,100%{opacity:0.25}50%{opacity:0.65}}
+.paris-pulse{
+  position:absolute;top:50%;left:50%;width:35px;height:35px;
+  border:1.5px solid rgba(201,169,110,0.5);border-radius:50%;
+  transform:translate(-50%,-50%);pointer-events:none;
+  animation:ring 2s ease-out infinite;
+}
+@keyframes ring{0%{transform:translate(-50%,-50%) scale(0.8);opacity:0.6}100%{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
+
+/* Marrakech pin */
+.mkch-marker{display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.mkch-label{
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:400;
+  color:rgba(255,255,255,0.5);letter-spacing:0.06em;margin-bottom:4px;
+  text-shadow:0 1px 6px rgba(0,0,0,0.6);white-space:nowrap;
+}
+.mkch-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--terracotta);opacity:0.65;
+  box-shadow:0 0 10px rgba(193,123,93,0.4);
+}
+
+/* PLANE */
+#plane{
+  position:fixed;z-index:50;pointer-events:none;
+  opacity:0;width:120px;height:auto;
+  top:12%;left:50%;transform:translateX(-50%);
+  filter:drop-shadow(0 8px 25px rgba(0,0,0,0.4));
+}
+
+/* CLOUDS & WIND */
+.sc{position:fixed;pointer-events:none;z-index:30;background:white;border-radius:50%;filter:blur(28px);opacity:0}
+.wl{position:fixed;pointer-events:none;z-index:35;width:2px;height:0;background:linear-gradient(180deg,rgba(255,255,255,0.5),transparent);opacity:0}
+
+/* ALTIMETER */
+#altimeter{position:fixed;top:2rem;right:2rem;z-index:55;text-align:right;opacity:0;pointer-events:none}
+.alt-val{font-size:clamp(1.8rem,4vw,2.5rem);font-weight:300;color:var(--blanc);letter-spacing:0.05em;text-shadow:0 2px 20px rgba(0,0,0,0.4)}
+.alt-unit{font-size:0.65rem;letter-spacing:0.3em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-top:0.15rem}
+
+/* SKY TEXT */
+.sky-text{position:absolute;width:100%;text-align:center;z-index:45;pointer-events:none;opacity:0;padding:0 2rem}
+.sky-text h2{font-family:'Playfair Display',serif;font-size:clamp(1.5rem,4vw,2.5rem);font-weight:400;color:var(--blanc);text-shadow:0 2px 30px rgba(0,0,0,0.3)}
+
+/* EXPERIENCE */
+#experience{
+  position:relative;width:100%;height:8000px;display:none;
+  background:linear-gradient(180deg,#0a1628 0%,#1e3a5f 5%,#2d5a8a 12%,#4a8cc7 20%,#6aabdb 30%,#7cb3e8 40%,#9dc8ed 50%,#b8d9f2 58%,#c5ddf0 65%,#d9c9a5 75%,#c8a87c 82%,#a0c47c 88%,#6b9e4a 93%,#4a7a33 100%);
+}
+
+/* REVEAL */
+#reveal{position:absolute;bottom:850px;width:100%;text-align:center;z-index:50;padding:0 2rem;opacity:0}
+#reveal h1{font-family:'Playfair Display',serif;font-size:clamp(3rem,8vw,6rem);font-weight:700;color:var(--blanc);line-height:1.1;text-shadow:0 4px 40px rgba(0,0,0,0.5)}
+#reveal h1 em{font-style:italic;color:var(--gold-light)}
+#reveal .reveal-sub{font-family:'Cormorant Garamond',serif;font-size:clamp(1.2rem,2.8vw,1.7rem);font-weight:400;color:rgba(255,255,255,0.85);margin-top:1.5rem;line-height:1.7;max-width:650px;margin-left:auto;margin-right:auto}
+
+/* CHOICE */
+#choice{
+  position:absolute;bottom:0;left:0;right:0;min-height:550px;z-index:55;
+  background:linear-gradient(180deg,transparent 0%,rgba(253,251,247,0.95) 15%,var(--blanc) 30%);
+  padding:10rem 2rem 4rem;text-align:center;
+}
+.choice-title{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:400;color:var(--noir);margin-bottom:0.5rem}
+.choice-title em{font-style:italic;color:var(--terracotta)}
+.choice-sub{font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--warm-gray);margin-bottom:2rem}
+.date-card{
+  display:inline-block;background:var(--noir);padding:2.5rem 3.5rem;border-radius:4px;
+  border:1px solid rgba(201,169,110,0.2);transition:all 0.4s;cursor:default;max-width:400px;
+}
+.date-card:hover{border-color:var(--gold);box-shadow:0 12px 40px rgba(0,0,0,0.15);transform:translateY(-3px)}
+.date-icon{margin-bottom:1rem;opacity:0.7}
+.date-city{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:400;color:var(--blanc);margin-bottom:0.3rem}
+.date-loc{font-family:'Cormorant Garamond',serif;font-size:0.95rem;color:var(--gold-light);font-style:italic;margin-bottom:0.8rem}
+.date-detail{font-size:0.8rem;color:rgba(255,255,255,0.45);line-height:1.5}
+.closing-msg{max-width:500px;margin:2.5rem auto 0}
+.closing-msg p{font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--warm-gray);line-height:1.7}
+.closing-msg .sig{font-style:italic;color:var(--gold);margin-top:1rem}
+.back-link{display:inline-block;margin-top:2rem;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--warm-gray);text-decoration:none;transition:color 0.3s}
+.back-link:hover{color:var(--terracotta)}
+
+@media(max-width:600px){
+  .date-card{padding:2rem 2.5rem}
+  #altimeter{top:1rem;right:1rem}
+}
+</style>
+</head>
+<body>
+
+<!-- MAP INTRO -->
+<div id="map-intro">
+  <div id="map"></div>
+</div>
+
+<!-- PLANE -->
+<svg id="plane" viewBox="0 0 120 50" xmlns="http://www.w3.org/2000/svg">
+  <g fill="white" opacity="0.9">
+    <ellipse cx="55" cy="25" rx="45" ry="7" fill="rgba(255,255,255,0.95)"/>
+    <path d="M100,25 L115,24 L115,26Z" fill="rgba(255,255,255,0.9)"/>
+    <ellipse cx="95" cy="23" rx="4" ry="3" fill="rgba(100,180,255,0.4)"/>
+    <path d="M45,25 L30,8 L65,22Z" fill="rgba(255,255,255,0.85)"/>
+    <path d="M45,25 L30,42 L65,28Z" fill="rgba(255,255,255,0.8)"/>
+    <path d="M15,25 L5,10 L20,22Z" fill="rgba(255,255,255,0.85)"/>
+    <path d="M12,25 L5,25 L10,18Z" fill="rgba(255,255,255,0.7)"/>
+    <ellipse cx="50" cy="18" rx="6" ry="3" fill="rgba(200,200,210,0.6)"/>
+    <ellipse cx="50" cy="32" rx="6" ry="3" fill="rgba(200,200,210,0.6)"/>
+    <circle cx="80" cy="23" r="1.5" fill="rgba(100,180,255,0.3)"/>
+    <circle cx="74" cy="23" r="1.5" fill="rgba(100,180,255,0.3)"/>
+    <circle cx="68" cy="23" r="1.5" fill="rgba(100,180,255,0.3)"/>
+  </g>
+</svg>
+
+<!-- ALTIMETER -->
+<div id="altimeter">
+  <div class="alt-val" id="alt-val">4 000</div>
+  <div class="alt-unit">metres</div>
+</div>
+
+<!-- CLOUDS & WIND -->
+<div class="sc" id="sc1" style="width:320px;height:100px;top:18%;left:-8%"></div>
+<div class="sc" id="sc2" style="width:420px;height:130px;top:38%;right:-12%"></div>
+<div class="sc" id="sc3" style="width:260px;height:85px;top:55%;left:8%"></div>
+<div class="sc" id="sc4" style="width:380px;height:115px;top:72%;right:3%"></div>
+<div class="sc" id="sc5" style="width:200px;height:70px;top:28%;left:55%"></div>
+<div class="wl" id="wl1" style="left:18%;top:8%"></div>
+<div class="wl" id="wl2" style="left:48%;top:3%"></div>
+<div class="wl" id="wl3" style="left:73%;top:12%"></div>
+<div class="wl" id="wl4" style="left:33%;top:18%"></div>
+<div class="wl" id="wl5" style="left:83%;top:6%"></div>
+<div class="wl" id="wl6" style="left:58%;top:22%"></div>
+
+<!-- SCROLL EXPERIENCE -->
+<div id="experience">
+  <div class="sky-text" id="txt-clouds" style="top:30%">
+    <h2>On traverse les nuages</h2>
+  </div>
+
+  <div id="reveal">
+    <h1>Joyeux anniversaire<br><em>Mon coeur</em></h1>
+    <p class="reveal-sub">
+      En tant qu'adepte de nouvelles decouvertes et de sensations fortes, voici le graal des experiences :<br><strong style="display:inline-block;font-family:'Playfair Display',serif;font-size:clamp(1.6rem,4vw,2.8rem);font-weight:700;color:var(--blanc);border:1px solid rgba(255,255,255,0.3);padding:0.5em 1em;margin-top:1rem;line-height:1.2;letter-spacing:0.03em;backdrop-filter:blur(8px);background:rgba(255,255,255,0.08);">un saut en parachute !</strong>
+    </p>
+  </div>
+
+  <div id="choice">
+    <h2 class="choice-title">A toi de <em>choisir</em></h2>
+    <p class="choice-sub">Quand tu veux sauter.</p>
+    <div class="date-card">
+      <div class="date-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5">
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      </div>
+      <h3 class="date-city">Paris</h3>
+      <div class="date-loc">Region parisienne &middot; Saut en tandem</div>
+      <p class="date-detail">4 000 metres d'altitude. 50 secondes de chute libre. Le plus beau panorama de ta vie.</p>
+    </div>
+    <div class="closing-msg">
+      <p>Tu choisis la date qui te fait envie, et on reserve. C'est ton moment.</p>
+      <p class="sig">Je t'aime. — Arnaud</p>
+    </div>
+    <a href="voyage-constance.html" class="back-link">&larr; Retour au voyage</a>
+  </div>
+</div>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+// ===== LEAFLET MAP =====
+const map = L.map('map',{
+  center:[38,5],
+  zoom:4,
+  zoomControl:false,
+  dragging:false,
+  scrollWheelZoom:false,
+  doubleClickZoom:false,
+  touchZoom:false,
+  keyboard:false,
+  attributionControl:false
+});
+
+// CartoDB Voyager (clean, light, like the screenshot reference)
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+  maxZoom:19
+}).addTo(map);
+
+// --- MARRAKECH PIN (not clickable) ---
+const mkchIcon = L.divIcon({
+  className:'',
+  html:`<div class="mkch-marker">
+    <div class="mkch-label">Marrakech</div>
+    <div class="mkch-dot"></div>
+  </div>`,
+  iconSize:[80,30],
+  iconAnchor:[40,30]
+});
+L.marker([31.63,-8.0],{icon:mkchIcon,interactive:false}).addTo(map);
+
+// --- DOTTED LINE Marrakech -> Paris ---
+L.polyline([[31.63,-8.0],[48.86,2.35]],{
+  color:'#c9a96e',weight:1.5,opacity:0.3,
+  dashArray:'6,8'
+}).addTo(map);
+
+// --- PARIS PIN (clickable, heart) ---
+const parisIcon = L.divIcon({
+  className:'',
+  html:`<div class="paris-marker" onclick="startExperience()">
+    <div class="paris-label">Paris</div>
+    <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+      <div class="paris-pulse"></div>
+      <svg class="paris-heart" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="hg" x1="4" y1="4" x2="20" y2="20">
+          <stop offset="0%" stop-color="#d4ba85"/><stop offset="100%" stop-color="#c17b5d"/>
+        </linearGradient></defs>
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              fill="url(#hg)" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>
+      </svg>
+    </div>
+    <div class="paris-hint">Clique pour decouvrir</div>
+  </div>`,
+  iconSize:[140,75],
+  iconAnchor:[70,45]
+});
+L.marker([48.86,2.35],{icon:parisIcon}).addTo(map);
+
+// ===== START EXPERIENCE =====
+function startExperience(){
+  const intro=document.getElementById('map-intro');
+  const exp=document.getElementById('experience');
+
+  gsap.to(intro,{opacity:0,duration:1.2,ease:'power2.inOut',onComplete:()=>{
+    intro.style.display='none';
+    exp.style.display='block';
+    document.body.classList.add('scrollable');
+    window.scrollTo(0,0);
+    gsap.fromTo('#plane',{x:200,y:-50,opacity:0,rotation:-5},{x:0,y:0,opacity:1,rotation:0,duration:1.5,ease:'power2.out',onComplete:initScroll});
+  }});
+}
+
+// ===== SCROLL =====
+function initScroll(){
+  gsap.to('#altimeter',{opacity:1,duration:0.5});
+
+  gsap.to('#plane',{y:-500,x:-200,scale:0.2,opacity:0,rotation:-15,ease:'none',
+    scrollTrigger:{trigger:'#experience',start:'top top',end:'12% top',scrub:0.5}});
+
+  ScrollTrigger.create({
+    trigger:'#experience',start:'top top',end:'85% top',scrub:0.1,
+    onUpdate:(self)=>{
+      const alt=Math.round(4000*(1-self.progress));
+      const f=alt>=1000?Math.floor(alt/1000)+' '+String(alt%1000).padStart(3,'0'):String(alt);
+      document.getElementById('alt-val').textContent=f;
+      document.getElementById('altimeter').style.opacity=alt<50?0:1;
+    }
+  });
+
+  ['#sc1','#sc2','#sc3','#sc4','#sc5'].forEach((id,i)=>{
+    const s=5+i*13,d=i%2===0?-1:1;
+    gsap.fromTo(id,{opacity:0,x:d*250},{opacity:0.7,x:d*-500,
+      scrollTrigger:{trigger:'#experience',start:s+'% top',end:(s+22)+'% top',scrub:0.3}});
+  });
+
+  ['#wl1','#wl2','#wl3','#wl4','#wl5','#wl6'].forEach((id,i)=>{
+    gsap.fromTo(id,{height:0,opacity:0},{height:()=>80+Math.random()*180,opacity:0.3+Math.random()*0.3,y:600,
+      scrollTrigger:{trigger:'#experience',start:(15+i*8)+'% top',end:(35+i*8)+'% top',scrub:0.2}});
+  });
+
+  gsap.to('#txt-clouds',{opacity:1,y:-20,
+    scrollTrigger:{trigger:'#txt-clouds',start:'top 75%',end:'top 45%',scrub:0.5,
+      onLeave:()=>gsap.to('#txt-clouds',{opacity:0,duration:0.4}),
+      onEnterBack:()=>gsap.to('#txt-clouds',{opacity:1,duration:0.4})}});
+
+  gsap.fromTo('#reveal',{opacity:0,scale:0.92,y:30},{opacity:1,scale:1,y:0,
+    scrollTrigger:{trigger:'#reveal',start:'top 75%',end:'top 40%',scrub:0.5}});
+
+  ScrollTrigger.refresh();
+}
+</script>
+</body>
+</html>
